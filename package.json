@@ -1,0 +1,45 @@
+{
+  "name": "hackita",
+  "version": "1.0.0",
+  "description": "A TypeScript CLI tool to analyze Bitbucket repository activity over the past 7 days",
+  "main": "dist/hackita.js",
+  "bin": {
+    "hackita": "./dist/hackita.js"
+  },
+  "files": [
+    "dist/**/*",
+    "hackita.ts",
+    "tsconfig.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/hackita.js",
+    "dev": "ts-node hackita.ts",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "npm run build && npm start",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "bitbucket",
+    "analyzer",
+    "typescript",
+    "git",
+    "activity"
+  ],
+  "author": "Bitbucket Activity Analyzer",
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 
