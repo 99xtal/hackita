@@ -67,6 +67,7 @@ interface BitbucketRepository {
 
 interface BitbucketResponse<T> {
     values: T[];
+    next?: string;
 }
 
 class BitbucketAnalyzer {
@@ -170,30 +171,59 @@ class BitbucketAnalyzer {
         console.log('🔍 Fetching repositories...');
         const encodedWorkspace = encodeURIComponent(this.workspace!.toLowerCase());
         
-        // Try with different page sizes for robustness
-        const endpoints = [
-            `/2.0/repositories/${encodedWorkspace}?pagelen=100`,
-            `/2.0/repositories/${encodedWorkspace}?pagelen=50`,
-            `/2.0/repositories/${encodedWorkspace}`
-        ];
+        let allRepos: string[] = [];
+        let nextUrl: string | undefined = `/2.0/repositories/${encodedWorkspace}?pagelen=100`;
+        let pageCount = 0;
         
-        for (const endpoint of endpoints) {
-            try {
-                const response = await this.makeRequest<BitbucketResponse<BitbucketRepository>>(endpoint);
-                this.repos = response.values.map(repo => repo.name);
-                console.log(`📁 Found ${this.repos.length} repositories`);
-                return this.repos;
-            } catch (error) {
-                // If this is the last endpoint to try, throw the error
-                if (endpoint === endpoints[endpoints.length - 1]) {
-                    throw new Error(`Failed to fetch repositories: ${(error as Error).message}`);
+        try {
+            while (nextUrl) {
+                pageCount++;
+                process.stdout.write(`📄 Page ${pageCount}... `);
+                
+                try {
+                    const response: BitbucketResponse<BitbucketRepository> = await this.makeRequest<BitbucketResponse<BitbucketRepository>>(nextUrl);
+                    const repoNames = response.values.map((repo: BitbucketRepository) => repo.name);
+                    allRepos.push(...repoNames);
+                    
+                    console.log(`${repoNames.length} repos`);
+                    
+                    // Check if there's a next page
+                    nextUrl = response.next;
+                    if (nextUrl) {
+                        // Extract just the path from the full URL
+                        nextUrl = nextUrl.replace('https://api.bitbucket.org', '');
+                    }
+                    
+                    // Add delay between requests to respect rate limits
+                    if (nextUrl) {
+                        await new Promise<void>(resolve => setTimeout(resolve, 200));
+                    }
+                } catch (error) {
+                    // If we have some repos already, continue with what we have
+                    if (allRepos.length > 0) {
+                        console.warn(`\n⚠️  Error fetching page ${pageCount}: ${(error as Error).message}`);
+                        console.log(`📁 Continuing with ${allRepos.length} repositories from previous pages`);
+                        break;
+                    } else {
+                        // Try with smaller page size on first page failure
+                        if (pageCount === 1 && nextUrl && nextUrl.includes('pagelen=100')) {
+                            console.log('retrying with smaller page size...');
+                            nextUrl = `/2.0/repositories/${encodedWorkspace}?pagelen=50`;
+                            pageCount = 0;
+                            continue;
+                        }
+                        throw error;
+                    }
                 }
-                // Otherwise, continue to next endpoint
-                continue;
             }
+            
+            this.repos = allRepos;
+            console.log(`\n📁 Total repositories found: ${this.repos.length} (across ${pageCount} pages)`);
+            return this.repos;
+            
+        } catch (error) {
+            throw new Error(`Failed to fetch repositories: ${(error as Error).message}`);
         }
-        
-        return [];
     }
 
     // Get date range for the past week

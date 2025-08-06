@@ -6,8 +6,8 @@ A TypeScript command-line tool to analyze Bitbucket repository activity over the
 
 - 📊 Analyze commits and pull requests from the last 7 days
 - 👥 Track activity by contributor
-- 🔍 Support for multiple repositories in a workspace
-- 📈 Generate detailed activity reports with PR state breakdown (Open, Merged, Declined)
+- 🔍 Support for **all repositories** in a workspace (automatic pagination)
+- 📈 Generate detailed activity reports
 - 🔐 Secure authentication with Bitbucket App Passwords
 
 ## Prerequisites
@@ -112,7 +112,10 @@ npm start -- --verbose
 
 🏢 Analyzing workspace: my-workspace
 🔍 Fetching repositories...
-📁 Found 5 repositories
+📄 Page 1... 100 repos
+📄 Page 2... 50 repos
+
+📁 Total repositories found: 150 (across 2 pages)
 📅 Date range: 2024-01-15 to 2024-01-22
 
 📊 Processing repositories...
